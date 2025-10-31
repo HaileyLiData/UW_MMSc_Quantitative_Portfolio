@@ -1,11 +1,15 @@
 # Assignment 2 – Duality and Sensitivity Analysis
 
-This assignment explores the concepts of **LP duality** and **sensitivity analysis**.  
-It includes:
-- Formulating the **dual problem** and interpreting dual variables (shadow prices).  
-- Applying the **complementary slackness** condition to connect primal and dual solutions.  
-- Conducting **sensitivity analysis** to evaluate how changes in parameters (objective coefficients or RHS values) affect the optimal solution.  
-- Understanding the managerial meaning behind dual values and sensitivity ranges.  
+This folder contains my work for **Assignment 2** of MSE603 (Principles of Operations Research).  
+In this assignment, I explored **duality theory** and **sensitivity analysis** to interpret the economic meaning of linear programming solutions.
 
-Tools used: Excel Solver and manual LP analysis.  
-Learning outcome: enhanced understanding of the economic interpretation of duality and the stability of optimal solutions under parameter changes.
+🔍 **Key Topics**
+- Formulating and interpreting **dual problems**  
+- Applying **complementary slackness** between primal and dual solutions  
+- Analyzing **shadow prices** and their managerial implications  
+- Conducting **sensitivity tests** on objective coefficients and RHS values  
+- Understanding how parameter changes affect optimality and feasibility  
+
+**Files included:**  
+- `MSE603_Assignment2_Xiaohui (Hailey) Li.pdf`
+
