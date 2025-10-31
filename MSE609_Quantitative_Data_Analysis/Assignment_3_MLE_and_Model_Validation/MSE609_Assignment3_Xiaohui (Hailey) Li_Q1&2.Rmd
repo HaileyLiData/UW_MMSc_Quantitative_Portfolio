@@ -1,0 +1,258 @@
+---
+title: "MSE609_Assignment3"
+author: "Xiaohui (Hailey) Li"
+date: "Sept 30, 2025"
+output:
+  pdf_document:
+    latex_engine: xelatex
+mainfont: "Times New Roman"
+header-includes: |
+  \usepackage{newunicodechar}
+  \newunicodechar{μ}{\ensuremath{\mu}}
+  \newunicodechar{σ}{\ensuremath{\sigma}}
+  \newunicodechar{≈}{\ensuremath{\approx}}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message=FALSE, warning=FALSE) 
+library(fitdistrplus)                                
+```
+
+## 1.MLE for normal distribution [R Coding]
+  (a) Generate 50 random numbers with set.seed(200) from the normal distribution with µ = 0 and σ = 2.R coding only 
+  (b) Given this synthetic data in (a), estimate µ and σ using the MLE. Use optim() or nlm() function. Check whether the estimated parameters are close to the actual ones.
+  (c) Repeat this exercise with 5000 generated numbers instead of 50 numbers with set.seed(200). What difference can you tell?
+  
+## Solution 
+(a) Generate 50 random numbers:
+```{r}
+set.seed(200)
+data <- rnorm(50, mean = 0, sd = 2)
+matrix(round(data, 3), ncol = 5)
+```
+(b) we use he optim() function:
+```{r}
+norm_lik <- function(par, x){
+  # define a function called norm_lik
+  # optim() will pass in a vector of parameters par and data x.
+  
+  mu <- par[1]      # par[1] is the mean µ
+  sigma <- par[2]   # par[2] is the mean σ
+  
+  log_lik_sum <- -sum(dnorm(x, mean = mu, sd = sigma, log = T))
+  # compute negative log_likelihood of the normal distribution.
+  # given the data x and parameter µ and σ.
+  
+  return(log_lik_sum)
+  # return the computed negative log-likelihood to be minimized.
+}
+
+optim(par = c(0,1), fn = norm_lik, x = data)$par
+# we use the optim() function to minimize the negative log-likelihood
+# this finds the value of µ and σ that best fit the data under the normal distribution
+```
+(b) we use he nlm() function:
+```{r}
+norm_lik <- function(par, x){
+  # define another version of the likelihood function for nlm()
+  
+  mu <- par[1]      # par[1] is the mean µ
+  sigma <- par[2]   # par[2] is the mean σ
+  
+  log_lik_sum <- -sum(dnorm(x, mean = mu, sd = sigma, log = T))
+  # compute negative log_likelihood of the normal distribution.
+  # given the data x and parameter µ and σ.
+  
+  return(log_lik_sum)
+  # return the computed negative log-likelihood to be minimized.
+}
+
+nlm(norm_lik, p = c(0,1), x = data)$estimate
+# we use the nlm() function to minimize the negative log-likelihood
+# this finds the value of µ and σ that best fit the data under the normal distribution
+```
+Conclusion: the estimate parameters (μ ≈ –0.16, σ ≈ 1.56) are reasonably close to the true values (μ = 0, σ = 2).
+
+(c)Repeat this exercise with 5000 generated numbers
+```{r}
+set.seed(200)
+data <- rnorm(5000, mean = 0, sd = 2)
+
+norm_lik <- function(par, x){
+  mu <- par[1]      
+  sigma <- par[2]   
+  
+  log_lik_sum <- -sum(dnorm(x, mean = mu, sd = sigma, log = T))
+  return(log_lik_sum)
+}
+
+optim(par = c(0,1), fn = norm_lik, x = data)$par
+```
+Conclusion: The new estimate parameters is (μ ≈ 0.02, σ ≈ 1.97). We can find out that When increasing the sample size from 50 to 5000, the MLE estimates of μ and σ become much closer to the true parameters (μ = 0, σ = 2).
+
+
+## 2.Cross-validation for Normal and Gamma distribution.[R Coding]
+  (a) Generate 100 random numbers from the normal distribution with µ = 10 and σ = 2 using set.seed(200). This is your synthetic data.
+  (b) Suppose you have two different models: the normal distribution and the Gamma distribution. Use a 10 fold cross-validation to see which model has a higher pre-dictive power.
+  (c) Generate 100 random numbers from the Gamma distribution with r = 2 and λ = 0.5 using set.seed(200). Given this new synthetic data, repeat (b). Which one has a higher predictive power?
+  
+## Solution
+(a) Generate 100 random numbers:
+```{r}
+set.seed(200)
+rn_dat <- rnorm(100, mean = 10, sd = 2)
+matrix(round(rn_dat, 3), ncol = 5)
+```
+
+(b) 10 fold cross-validation: first we Shuffle the data, split into 10 folds, take fold 1 as the test set, and print its values.
+```{r}
+n_fold <- 10
+# Set the number of folds to 10
+rn_dat_s <- sample(rn_dat)
+# Randomly shuffle the data order
+
+folds <- cut(seq(1, length(rn_dat_s)), breaks = n_fold, labels = FALSE)
+# Split the data into 10 groups and assign group labels (1–10)
+
+testID <- which(folds == 1)
+# Get indices of group 1 (test set)
+testD <- rn_dat_s[testID]
+# Extract test set data.
+testD
+# Print the test set data.
+```
+
+First, we fit a Normal model on the training data and compute the test set’s total log-likelihood.
+```{r}
+trainD <- rn_dat_s[-testID]
+# Remove test set, keep training set data
+
+trained_norm <- suppressWarnings(fitdist(trainD, "norm", method = "mle"))
+trained_norm$estimate
+# Fit an normal distribution to trainD by MLE and get its parameter(s).
+
+test_result_norm <- sum(dnorm(testD,
+                              mean = trained_norm$estimate["mean"],
+                              sd   = trained_norm$estimate["sd"],
+                              log  = TRUE))
+# Compute total log-likelihood of test data under the normal model.
+
+test_result_norm
+# Show estimated parameters
+```
+
+Second, we fit a Gamma model on the training data and compute the test set’s total log-likelihood.
+```{r}
+trained_gamma <- suppressWarnings(fitdist(trainD, "gamma", method = "mle"))
+trained_gamma$estimate[1]; trained_gamma$estimate[2]
+# Fit a Gamma distribution to training data using MLE.
+# Show estimated parameters: shape and rate.
+
+test_result_gamma <- sum(dgamma(testD, shape = trained_gamma$estimate[1], 
+                                rate = trained_gamma$estimate[2], log = T))
+# Compute total log-likelihood of test data under the Gamma model.
+test_result_gamma
+```
+Then, we defines a function to run k-fold cross-validation for a chosen probabilistic model.Returns cross-validation scores we can average and compare to choose the better model.
+```{r}
+CV_fun <- function(n_fold, n_rep, uni_data, distribution){
+  
+  test_list <- list()
+  test_list_all <- list()
+  for (k in 1:n_rep) {
+    
+    uni_data_s <- sample(uni_data)
+    
+    folds <- cut(seq(1, length(uni_data_s)), breaks = n_fold, labels=FALSE)
+    
+    for (i in 1:n_fold) {
+      testID <- which(folds == i)
+      testD <- uni_data_s[testID]
+      trainD <- uni_data_s[-testID]
+      
+      if(distribution == "normal"){
+        trained <- suppressWarnings(fitdist(trainD, "norm", method = "mle"))
+        test_result <- sum(dnorm(testD,
+                         mean = trained$estimate["mean"],
+                         sd   = trained$estimate["sd"],
+                         log  = TRUE))
+      }else if(distribution == "gamma"){
+        trained <- suppressWarnings(fitdist(trainD, "gamma", method = "mle"))
+        test_result <- sum(dgamma(testD, shape = trained$estimate[1], 
+                                  rate = trained$estimate[2], log = T))
+      }else{
+        print(paste("Unrecognized distribution requested", distribution, sep = " "))
+        quit(status = 1)
+      }
+        test_list[[i]] <- test_result
+    }
+    test_list_all[[k]] <- sum(unlist(test_list))
+  }
+   return(test_list_all)
+}
+
+set.seed(200); CV_norm <- CV_fun(n_fold = 10, n_rep = 20, 
+                                 uni_data = rn_dat, distribution = "normal")
+set.seed(200); CV_gamma <- CV_fun(n_fold = 10, n_rep =20, 
+                                  uni_data = rn_dat, distribution = "gamma")
+# run 10-fold CV 20 times with normal and gamma model.
+
+unlist(CV_norm)
+# Turn the per-repeat results lists of normal model into numeric vectors.
+```
+
+```{r}
+unlist(CV_gamma)
+# Turn the per-repeat results lists of gamma model into numeric vectors.
+```
+
+```{r}
+# Compute the average total log-likelihood for each model; larger (less negative) is better.
+mean(unlist(CV_norm))
+mean(unlist(CV_gamma))
+```
+Conclusion: average total log-likelihoods: Normal = −254.84, Gamma = −235.19 → Gamma has higher predictive power (larger = better).
+
+(c) Generate 100 random numbers from the Gamma distribution and repeat (b)
+```{r}
+set.seed(200)
+rn_dat <- rgamma(100, shape = 2, rate = 0.5)
+
+CV_norm  <- CV_fun(n_fold = 10, n_rep = 20, uni_data = rn_dat, distribution = "normal")
+CV_gamma <- CV_fun(n_fold = 10, n_rep = 20, uni_data = rn_dat, distribution = "gamma")
+
+mean(unlist(CV_norm)); mean(unlist(CV_gamma)) 
+
+```
+Conclusion: with Gamma data: Normal = −256.01, Gamma = −235.45 → Gamma is better, consistent with the data-generating distribution.
+
+## 3.MLE for uniform and exponential distribution [Calculation Question]
+You are a data scientist at Grand River Child Care Center and have been tasked with analyzing data on patients’ waiting times. You have the following 5 observations of patients’ waiting times:
+
+Waiting time in hours = [0.29, 0.35, 0.20, 0.93, 0.04]
+
+You are to determine the distribution that best describes the waiting times. Two models are proposed:
+
+Model 1 (Uniform Distribution): Waiting times are equally likely between 0 and 1 hour. The probability density function (pdf) for the uniform distribution over the interval [a, b] is:
+$$
+f(x\mid a,b)=
+\begin{cases}\frac{1}{b-a}  & \text{for }\, a \leq x \leq b\\
+0  &\text{otherwise}
+\end{cases}
+$$
+Model 2 (Exponential Distribution): This model assumes shorter waiting times are more frequent. The pdf for the exponential distribution with rate parameter λ is:
+
+$$
+f(x\mid \lambda)=
+\begin{cases} \lambda e^{-\lambda x}  & \text{for}\, x \geq 0\\
+0  &\text{otherwise}
+\end{cases}
+$$
+Note that the expected value E(X) for the exponential distribution is:
+$$
+E(X) = \frac {1}{\lambda}
+$$
+Using the provided data and the two models, determine which model is more plausible for describing the waiting times and justify your choice. Compute the expected waiting time for both models.
+
+# Solution
+
