@@ -1,0 +1,275 @@
+---
+title: "MSE609_Assignment1"
+author: "Xiaohui Li (Hailey)"
+date: "Sept 16, 2025"
+output:
+  pdf_document: default
+  word_document: default
+---
+
+## 1.Simple urn simulation with R:
+There is an urn with 2 black balls (B), 3 white balls (W), and 3 red balls (R). We draw all of these 8 balls sequentially.
+
+  (a) What is the probability of observing B first and W last when we draw without replacement. The sequence between the first B and the last W does not matter. Calculate the probability by simulation.
+  (b) What is the probability of observing B first and W last when we draw with replacement. The sequence between the first B and the last W does not matter. Calculate the probability by simulation.
+  
+## Solution
+First, we use 1 to represent black, use 2 to represent white and use 3 to represent red. Then, we will create two matrices, one with replacement, and one without, to store the sampling results. 
+```{r}
+simple_urn <- c(rep(1, 2), rep(2, 3), rep(3, 3)) 
+# define an urn with 2 black, 3 white, and 3 red balls
+n_trial <- 10^4                                  
+# define the number of trials (10,000 simulations)
+
+w_replacement <- matrix(NA, nrow = n_trial, ncol = length(simple_urn))    
+wo_replacement <- matrix(NA, nrow = n_trial, ncol = length(simple_urn))   
+# create a matrix to store samples with and without replacement
+```
+
+
+Then, we run a for loop for n_trial iterations; each time we draw 8 balls with and without replacement and save the sequences to w_replacement and wo_replacement, respectively.
+```{r}
+for (i in 1:n_trial) {
+  # repeat the experiment n_trial times
+  w_replacement[i,] <- sample(simple_urn, length(simple_urn), replace = TRUE)
+  wo_replacement[i,] <- sample(simple_urn, length(simple_urn), replace = FALSE)
+  # sample 8 balls with and without replacement and store the result in row i
+}
+
+head(w_replacement)
+head(wo_replacement)
+# check first 6 rows
+```
+
+Next, we define a function to check whether the first ball is black and the last ball is white.
+```{r}
+success_fun <- function(x){
+  # define a function called success_fun
+  # input x = one row of balls we drew 
+  
+  if (x[1] == 1 && x[length(x)] == 2){
+    # check if the first ball is black(1) and the last ball is white(2)
+    return(1)
+    # if the condition is true, return 1 (success)
+  } else{
+    return(0)
+    # return 0 (failure)
+  }
+}
+```
+
+Finally, we apply the function to each row and compute the proportion of successes to calculate the probability.
+```{r}
+w_replacement_result <- apply(w_replacement, 1, success_fun)
+wo_replacement_result <- apply(wo_replacement, 1, success_fun)
+# apply success_fun to each row of w_replacement and wo_replacement
+
+set.seed(1)
+# set the random seed so the result is the same every time
+
+(length(w_replacement_result) - sum(w_replacement_result == 0)) / 
+  length(w_replacement_result)
+# count successes in w_replacement_result by total
+## = 0.0944 with replacement
+
+(length(wo_replacement_result) - sum(wo_replacement_result == 0)) / 
+  length(wo_replacement_result)
+# count successes in wo_replacement_result by total
+## = 0.1034 without replacement
+```
+
+## 2.Generalized urn simulation with R:
+The initial composition of colours in the urn is 20 black, 10 white, 7 red, and 7 green. When a ball of a certain colour is picked, we add two balls of the same colour from the urn. For example, when a black ball is picked for the first draw, we add two black balls before we start the second draw.
+
+  (a) Simulate the composition of colours in each draw for 20 trials. R coding only
+  (b) Repeat this experiment 3 more times (with different set.seed). R coding only
+  (c) Visualize the results of the above 4 experiments in a 2 by 2 plot. In each pot,visualize the time series of the number of balls of each colour. For example, see slide 33(the correct slide is 25) in Topic 1.
+  
+## Solution
+```{r}
+polya_run <- function(int_n, lambda=2, n_trial = 20){
+  # define function polya_run
+  # int_n: initial number of balls of each color
+  # lambda: number of balls added when a color is drawn
+  # n_trial: number of draws
+  
+  polya_result <- matrix(NA, nrow = n_trial + 1, ncol = length(int_n))
+  # use matrix to store the number of balls at each step
+  polya_result[1,] <- int_n
+  # initial state is row 1
+  
+  for (i in 2: (n_trial + 1)) {
+    # loop over each trail, starting from the 2nd row
+    
+    interval <- cumsum(polya_result[i-1,])/sum(polya_result[i-1,])
+    # compute cumulative probabilities 
+    # (CDF = Cumulative Distribution Function) for all colors
+    # cumsum(x): cumulative of vector x
+    # example: cumsum(c(3,1,2)) = c(3,4,6)
+    # sum(x): total sum of vector x
+    # division turns counts into CDF: c(3,4,6) = c(0.5,0.667,1.0)
+    
+    draw <- runif(1)
+    # generate a random number between 0 and 1
+    
+    bin_assign <- c(interval >= draw)*1
+    # turn comparison (interval >= draw) into a 0/1 vector
+    # example: interval = c(0.5,0.667,1.0), draw=0.7, bin_assign = c(0,0,1)
+    
+    bin_select <- c()
+    for (j in 1:length(bin_assign)) {
+      # loop through bin_assign to find the first 1
+      if(bin_assign[j] == 1){
+        bin_select <- j
+        # that index j is the selected color(bin_select)
+        break
+      }
+    }
+    
+    polya_result[i,] <- polya_result[i-1,]
+    # cpoy the previous raw (state of balls before this draw)
+    polya_result[i, bin_select] <- polya_result[i, bin_select] +lambda
+    # add lambda balls of the selected color
+    
+  }
+  
+  return(polya_result)
+  # return the full result matrix (all draws recorded)
+  
+}
+
+set.seed(1)
+# set the random seed so the result is the same every time
+result <- polya_run(int_n = c(20, 10, 7, 7), lambda=2, n_trial = 20)
+# run the urn process with initial balls(20,10,7,7),lambda=2, for 20 trials
+head(result, 21)
+# show the first 21 rows of results (initial state + 20 draws)
+
+```
+
+(b) 
+```{r}
+set.seed(1); result_1 <- polya_run(int_n = c(20, 10, 7, 7), lambda=2, n_trial =20)
+set.seed(2); result_2 <- polya_run(int_n = c(20, 10, 7, 7), lambda=2, n_trial =20)
+set.seed(3); result_3 <- polya_run(int_n = c(20, 10, 7, 7), lambda=2, n_trial =20)
+set.seed(4); result_4 <- polya_run(int_n = c(20, 10, 7, 7), lambda=2, n_trial =20)
+# run the experiment with random seed = 1,2,3,4
+
+head(result_1, 21)
+head(result_2, 21)
+head(result_3, 21)
+head(result_4, 21)
+# show first 21 rows of result_1 to result_4
+
+```
+
+(c) 
+```{r}
+result_list <- list(result_1, result_2, result_3, result_4)
+# store the four results into a list
+
+color_list <- c("black", "grey", "red", "green")
+# black = black ball, grey = white ball,
+# red = red ball, green = green ball, 
+
+for (k in 1: length(result_list)) {
+  # loop over each result (4 in total)
+  
+  y_min <- min(result_list[[k]])
+  y_max <- max(result_list[[k]])
+  # set y-axis range based on min/max values of the current result
+  
+  plot(1, type = "n", ylim = c(y_min, y_max), xlim = c(1,21), 
+       xlab = "Trial number", ylab = "Number of balls")
+  # create an empty plot with proper axis limits and labels
+  
+  for (i in 1:4) {
+     lines(0:20, result_list[[k]][,i], col = color_list[i], lwd=1)
+    # loop through 4 ball colors, draw a line for each ball over trials
+    # lwd=1 means line width=1
+  }
+}
+
+```
+
+
+## 3.Calculate the probability of Sally Clark being innocent based on Bayes’ theorem:
+Read slides 2-3 in Topic 1. Calculate the probability of Sally Clark being innocent based on Bayes’ theorem. Do you think Sally Clark is innocent? For simplicity, assume that there are only two possible causes of children's death: SIDS and murder. Assume further that the probability that two children are murdered by their mother is 1 in 200 million.
+
+## Solution
+The judges mistakenly treated "the probability that both children died of SIDS" as "the probability that the mother is innocent". However, what we should really care about is: given that both children died, the probability that they died of SIDS -- that is, using Bayes' theorem to calculate the probability of the mother's innocence.
+$$
+P(A \mid B) = 
+\frac{P(B \mid A)P(A)}{P(B)}
+$$
+
+
+```{r}
+# H is the event that both children died of SIDS.
+PH <- 1/73000000    #P(H)
+
+# M is the event that two children are murdered by their mother.
+PM <- 1/200000000   #P(M)
+
+# D is the event that both children died.
+PD_H <- 1    #P(D|H) = 1
+PD_M <- 1    #P(D|M) = 1
+
+# We use Bayes' theorem to calculate of P(H|D)
+PH_D <- (PD_H*PH) / (PD_H*PH + PD_M*PM)  
+
+print(PH_D)
+```
+
+
+## 4.Laplace’s sunrise problem using R:
+Calculate the probability of the sun rising tomorrow using a binomial model
+$$
+\binom{n_{All}}{n_Sun}\,p^{n_{Sun}}(1-p)^{\,n_{All}-n_{Sun}}
+$$
+
+
+where nAll is the total number of days, nSun is the number of days with sun rising, and p is the probability of sun rising. Note that nAll = nSun + nNoSun where nNoSun is the number of days without sun rising. Using Bayes’ theorem, the probability distribution of p given the data, nSun; nNo Sun, is:
+$$
+P(p\mid n_{Sun}, n_{NoSun}) =
+\frac{P(p)\times P(n_{Sun}, n_{NoSun}\mid p)}
+{P(n_{Sun}, n_{NoSun})}
+$$
+
+Write an R script to calculate P(p|nSun, nNoSun) for any values of nSun and nNoSun, and for any P(p). Assume the parameter space of p is the set of numbers between 0 and 1, with an interval of 0.001.
+
+## Solution
+Following Laplace's suggestion, we assume a uniform distribution for P(p). Under this assumption, the probability that the sun will rise tomorrow is given by:
+$$
+p = \frac{n_{Sun} + 1}{n_{Sun}+ n_{NoSun} + 2}
+$$
+
+```{r}
+# define a function to calculate Laplace's probability of sunrise tomorrow. 
+laplace_prob <- function(nSun, nNoSun){
+  # For any values of uSun and nNosun, based on the formula:
+  p <- (nSun + 1) / (nSun + nNoSun + 2)
+  
+  return(round(p, 3))
+  # return the probability p, rounded to three decimal places
+}    
+
+laplace_prob(1000, 1)
+# Example 1: 1000 days with sunrise, 1 day without
+laplace_prob(99,30)
+# Example 2: 99 days with sunrise, 30 days without
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
