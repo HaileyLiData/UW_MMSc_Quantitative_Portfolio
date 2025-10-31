@@ -1,0 +1,116 @@
+---
+title: "MSE609_Assignment4"
+author: "Xiaohui (Hailey) Li"
+date: "Oct 7, 2025"
+output:
+  pdf_document:
+    latex_engine: xelatex
+mainfont: "Times New Roman"
+header-includes: |
+  \usepackage{newunicodechar}
+  \newunicodechar{μ}{\ensuremath{\mu}}
+  \newunicodechar{σ}{\ensuremath{\sigma}}
+  \newunicodechar{≈}{\ensuremath{\approx}}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message=FALSE, warning=FALSE) 
+library(fitdistrplus)                                
+```
+
+## 1.Simple linear regression with R: 
+Simulate data x from rnorm(n = 50, mean = 0,sd = 2)and y from rnorm(n = 50, mean = 2 + 1.5*x,sd = 10) using set.seed(4). Fit a linear regression of y on x using y = β0 + β1x + ε, where ε ~ iid N(0, sigma^2).
+
+  (a) Fit a linear regression of y on x1 using a simple linear model, y = β0 + β1x + ε,where ε ~ iid N(0, sigma^2). Show the summary of the regression results and interpret the estimated parameters.
+  (b) Plot y against x and add the fitted regression line.
+  
+## Solution 
+
+(a) Fit a linear regression of y on x1 using a simple linear model:
+```{r}
+set.seed(4)
+#Fix the random seed so results are reproducible.
+
+n <- 50
+# Set the sample size to 50.
+x <- sort(rnorm(n, 0, 2))
+# Draw n values from a Normal distribution (mean = 0, sd = 2) and sort them.
+y <- 2+ 1.5*x + rnorm(n, 0, 10)
+# Create the response: E[y|x] = 2+1.5x and plus Normal noise with sd = 10.
+
+#Fit an OLS linear regression of y on x; store the fitted model in lm_fit.
+lm_fit <- lm(y ~ x)
+# Print the regression summary (coefficients, standard errors, t/p-values, R², residual SE).
+summary(lm_fit)
+```
+(b) Plot y against x and add the fitted regression line:
+```{r}
+# draw a scatter plot of y versus x; 
+# then add the fitted regression line from lm_fit on top,
+# using a red line with width 2.
+plot(x, y); abline(lm_fit, col="red", lwd = 2)
+```
+## 2.Hypothesis testing with R: 
+Simulate data x from rnorm(n = 50, mean = 0,sd = 2)and y from rnorm(n = 50, mean = 2 + 1.5*x,sd = 10) using set.seed(4). Fit a linear regression of y on x using y = β0 + β1x + ε, where ε ~ iid N(0, sigma^2).
+
+  (a) Plot the data and add the fitted line.
+  (b) Extract the p-value attached to the estimator βˆ1 from summary(). This is the p-value according to the null hypothesis that β1 = 0. Given the significance level α = 0.05, are you going to reject the null hypothesis? [4 point]
+  (c) Repeat this exercise by generating another set of data. Keep the same structure of the data generating process but use set.seed(200). What is your p-value and what’s your decision on the null hypothesis?
+  (d) Read this article and discuss the limitations of the classical hypothesis testing.
+  (e) Read this article and discuss how prevalent p-hacking is in science.
+  
+## Solution 
+
+(a) Plot the data and add the fitted line:
+```{r}
+set.seed(4)
+#Fix the random seed so results are reproducible.
+
+n <- 50
+# Set the sample size to 50.
+x <- sort(rnorm(n, 0, 2))
+# Draw n values from a Normal distribution (mean = 0, sd = 2) and sort them.
+y <- 2+ 1.5*x + rnorm(n, 0, 10)
+# Create the response: E[y|x] = 2+1.5x and plus Normal noise with sd = 10.
+
+#Fit an OLS linear regression of y on x; store the fitted model in lm_fit.
+lm_fit <- lm(y ~ x)
+# Print the regression summary (coefficients, standard errors, t/p-values, R², residual SE).
+summary(lm_fit)
+
+# draw a scatter plot of y versus x; 
+# then add the fitted regression line from lm_fit on top,
+# using a red line with width 2.
+plot(x, y); abline(lm_fit, col="red", lwd = 2)
+```
+(b) At α = 0.05, the slope's p-value is 0.0716 (> 0.05), so we fail to reject H0: β1 = 0; this means there is no statistically significant linear relationship between x and y in this sample.
+
+(c) Use set.seed(200) to repeat the this exercise:
+```{r}
+set.seed(200)
+#Fix the random seed so results are reproducible.
+
+n <- 50
+# Set the sample size to 50.
+x <- sort(rnorm(n, 0, 2))
+# Draw n values from a Normal distribution (mean = 0, sd = 2) and sort them.
+y <- 2+ 1.5*x + rnorm(n, 0, 10)
+# Create the response: E[y|x] = 2+1.5x and plus Normal noise with sd = 10.
+
+#Fit an OLS linear regression of y on x; store the fitted model in lm_fit.
+lm_fit <- lm(y ~ x)
+# Print the regression summary (coefficients, standard errors, t/p-values, R², residual SE).
+summary(lm_fit)
+```
+At α = 0.05, the slope's p-value is 0.05443 (> 0.05), so we still fail to reject H0: β1 = 0; this means there is no statistically significant linear relationship between x and y in this sample. This result is borderline at the 0.05 level.
+
+(d) Discuss the limitations of the classical hypothesis testing:
+
+This article documents how a prominent researcher repeatedly searched the data first and wrote the hypothesis later--classic p-hacking--by trying many variables, models, and subgroup splits until p < 0.05 appeared. Hitting p < 0.05 here reflects analytic flexibility, not solid evidence; even basic details(e.g., the reported n) were inconsistent. This case shows that a rigid 0.05 rule encourages threshold-chasing, selective reporting, and after-the-fact stories, turning chance patterns into "findings". 
+
+In my view, a key limitation of the classical hypothesis testing is its p-only mindset--chasing 0.05 rather than understanding effect size, uncertainty, and replicability. Under such flexibility, false positives inflate and results become fragile and hard to replicate.
+
+(e) Discuss how prevalent p-hacking is in science:
+
+This article argues that p-hacking is very common in science. First, the authors text-mined a huge number of papers and looked at all the reported values. They found a clear pile-up just below 0.05(for example, many results at 0.045-0.050), which fit a "keep trying until p < 0.05, then stop and report" pattern. Second, they re-examined the p-values behind 12 meta-analyses and saw the same bump just under 0.05; even after fixing some misreported p-values, the bump got smaller but did not disappear. Put together, there are more "just significant" results than chance would produce, which strongly suggests that p-hacking is widespread across science fields.
+
