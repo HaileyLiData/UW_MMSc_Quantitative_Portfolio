@@ -1,11 +1,14 @@
 # Assignment 1 – The Simplex Method
 
-This assignment focuses on solving Linear Programming (LP) problems using the **Simplex Method**.  
-It covers:
-- Setting up an LP model with decision variables, objective function, and constraints.  
-- Performing tableau iterations to find the optimal solution.  
-- Identifying entering and leaving variables through ratio tests.  
-- Understanding degeneracy and alternative optima in LP.  
+This folder contains my work for **Assignment 1** of MSE603 (Principles of Operations Research).  
+In this assignment, I applied the **Simplex Method** to solve linear programming problems and explore optimality conditions.
 
-Tools used: Excel Solver and manual calculations.  
-Learning outcome: developed strong procedural understanding of the simplex algorithm and its practical application in resource allocation problems.
+🧮 **Key Topics**
+- Formulating Linear Programming (LP) models with objective functions and constraints  
+- Performing tableau iterations to identify entering and leaving variables  
+- Applying the ratio test and pivot operations to reach the optimal solution  
+- Understanding degeneracy and alternative optimal solutions  
+- Verifying results with Excel Solver and manual computation  
+
+**Files included:**  
+- `MSE603_Assignment1_Xiaohui (Hailey) Li.pdf`
